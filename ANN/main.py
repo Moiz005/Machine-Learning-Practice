@@ -1,0 +1,41 @@
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from sklearn.preprocessing import LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+df = pd.read_csv('Churn_Modelling.csv')
+
+X = df.iloc[:, 3:-1].values
+y = df.iloc[:, -1].values
+
+le = LabelEncoder()
+X[:, 2] = le.fit_transform(X[:, 2])
+
+ct = ColumnTransformer(transformers=[('encoder', OneHotEncoder(), [1])], remainder='passthrough')
+X = np.array(ct.fit_transform(X))
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+ann = tf.keras.models.Sequential()
+ann.add(tf.keras.layers.Dense(units=6, activation='relu'))  # Adding an Input Layer
+ann.add(tf.keras.layers.Dense(units=6, activation='relu'))  # Adding a hidden Layer
+ann.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))  # Adding an Output Layer
+
+ann.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])   # For binary data
+# ann.compile(optimizer='adam', loss='categorical_crossentropy')  # For categorical output
+
+ann.fit(X_train, y_train, batch_size=32, epochs=100)
+
+y_pred = ann.predict(X_test)
+print(y_pred)
+
+# prediction = ann.predict(sc.transform([[1, 0, 0, 600, 1, 40, 3, 60000, 2, 1, 1, 50000]]))
+# print(prediction)
